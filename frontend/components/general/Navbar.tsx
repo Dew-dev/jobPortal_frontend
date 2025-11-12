@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   ChevronDown,
   User,
@@ -24,6 +25,7 @@ import {
 
 /* ==== Types ==== */
 export type NavItem = { href: string; label: string };
+
 type UserSession = {
   id: string;
   name: string;
@@ -154,7 +156,6 @@ export default function Navbar({
   );
 }
 
-
 /* ============================ Account Dropdown ============================ */
 function AccountDropdown({
   name,
@@ -166,7 +167,6 @@ function AccountDropdown({
   const first = name.split(" ")[0];
 
   return (
-    
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="gap-2 px-2">

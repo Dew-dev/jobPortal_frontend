@@ -1,46 +1,35 @@
-import { redirect } from "next/navigation";
+"use client";
+import { redirect, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createUser, emailExists } from "@/lib/dummy-users";
 import { createSession } from "@/lib/session";
+import { useState } from "react";
+import { registerAction } from "./actions";
 
-export const metadata = { title: "Register" };
+export default function RegisterPage() {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
 
-export default function RegisterPage({
-  searchParams,
-}: {
-  searchParams?: { error?: string };
-}) {
-  const error = searchParams?.error;
+    const formData = new FormData(e.currentTarget);
+    const result = await registerAction(formData);
 
-  async function registerAction(formData: FormData) {
-    "use server";
-    const name = String(formData.get("name") || "").trim();
-    const email = String(formData.get("email") || "")
-      .trim()
-      .toLowerCase();
-    const password = String(formData.get("password") || "");
-
-    if (!name || !email || !password)
-      redirect("/register?error=Please fill all fields");
-    if (emailExists(email))
-      redirect("/register?error=Email already registered");
-
-    const user = createUser({ name, email, password });
-    await createSession({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
-    redirect("/jobs");
+    if (result?.success) {
+      setSuccess("Registration successful!");
+      router.push("/login?fromRegister=true");
+    } else {
+      setError(result?.error || "Registration failed");
+    }
   }
-
   return (
     <main className="container mx-auto max-w-md px-4 py-10">
       <div className="rounded-xl border bg-card p-6 shadow-sm">
         <h1 className="mb-1 text-2xl font-bold">Create account</h1>
         <p className="mb-6 text-sm text-muted-foreground">
-          Registrasi dummy (non-persisten).
+          Register your account.
         </p>
 
         {error && (
@@ -49,11 +38,19 @@ export default function RegisterPage({
           </p>
         )}
 
-        <form action={registerAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm">Full name</label>
             <input
               name="name"
+              required
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm">Username</label>
+            <input
+              name="username"
               required
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-primary"
             />

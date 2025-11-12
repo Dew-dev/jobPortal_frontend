@@ -1,39 +1,45 @@
-import { redirect } from "next/navigation";
+"use client";
 import Link from "next/link";
-import { createSession } from "@/lib/session";
-import { findUserByEmail } from "@/lib/dummy-users";
+import { loginAction } from "./actions";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Metadata } from "next";
+import { useSearchParams } from "next/navigation";
 
-export const metadata = { title: "Login" };
+// export const metadata: Metadata = {
+//   title: "Login",
+//   description: "Login to your account",
+// };
+// export const metadata = { title: "Login" };
 
-export default async function LoginPage(props: {
-  searchParams: Promise<{ error?: string; success?: string }>;
-}) {
-  // ✅ Next.js 15: searchParams adalah Promise — harus di-await
-  const { error, success } = await props.searchParams;
+export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const fromRegister = searchParams.get("fromRegister");
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [register, setRegister] = useState<string | null>(null);
 
-  // Server Action untuk login
-  async function loginAction(formData: FormData) {
-    "use server";
-    const email = String(formData.get("email") || "")
-      .trim()
-      .toLowerCase();
-    const password = String(formData.get("password") || "");
-
-    const user = findUserByEmail(email);
-    if (!user || user.password !== password) {
-      redirect("/login?error=Invalid%20email%20or%20password");
+  useEffect(() => {
+    if (fromRegister === "true") {
+      setRegister("Registration successful!");
     }
+  }, [fromRegister]);
 
-    await createSession({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
-    // redirect("/?loggedin=1");
-    redirect("/?login=success");
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const result = await loginAction(formData);
+
+    if (result?.success) {
+      setSuccess("Login successful!");
+      router.push("/"); // redirect di client
+    } else {
+      setError(result?.error || "Login failed");
+    }
   }
-
   return (
     <main className="container mx-auto max-w-md px-4 py-10">
       <div className="rounded-xl border bg-card p-6 shadow-sm">
@@ -54,14 +60,20 @@ export default async function LoginPage(props: {
           </p>
         )}
 
-        <form action={loginAction} className="space-y-4">
+        {register && (
+          <p className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-300">
+            {register}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm">Email</label>
             <input
               name="email"
               type="email"
               required
-              defaultValue="aisha@example.com"
+              // defaultValue="aisha@example.com"
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </div>
@@ -71,7 +83,7 @@ export default async function LoginPage(props: {
               name="password"
               type="password"
               required
-              defaultValue="password"
+              // defaultValue="password"
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </div>
